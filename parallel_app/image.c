@@ -139,10 +139,16 @@ int getFeaturePoints(image_t* src, featurePoints_t* featurePoints, float* th) {
     for (int y = 0; y < src->height; y++) {
         for (int x = 0; x < src->width - 1; x++) {
             float score = fabs(getValue(src, x, y) - getValue(src, x + 1, y));
-            if (50.0f < score) {
+            if (*th < score) {
                 featurePoints_add(featurePoints, x, y);
             }
         }
+    }
+
+    if(featurePoints->capacity == featurePoints->size){
+        *th += 5.0f;
+    } else if(featurePoints->size < featurePoints->capacity/2){
+        *th -= 1.0f;
     }
 
     return 0;

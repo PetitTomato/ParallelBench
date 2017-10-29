@@ -17,12 +17,13 @@ typedef enum state {
     A, B, C, state_max
 } state_t;
 
-#define LEVEL 3
+#define LEVEL 5
 typedef struct context {
     state_t state;
     image_t blurImg;
     image_t pyramidImg[LEVEL];
     model_t model[LEVEL];
+    float featureThresh[LEVEL];
     featurePoints_t featureArray[LEVEL];
     int tmp1;
     int tmp2;

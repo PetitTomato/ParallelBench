@@ -28,7 +28,7 @@ typedef struct featurePoints {
     uint16_t size;
 } featurePoints_t;
 
-int getFeaturePoints(image_t* src, featurePoints_t* featurePoints);
+int getFeaturePoints(image_t* src, featurePoints_t* featurePoints, float* th);
 int releaseFeaturePoints(featurePoints_t* featurePoints);
 
 #endif /* IMAGE_H_ */

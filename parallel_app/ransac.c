@@ -34,6 +34,10 @@ static float getError(model_t m, point_t p) {
 }
 
 int ransac(const float* data, const int sample_num, model_t* model, const int iteration_num) {
+    if(sample_num < 2){
+        return 1;
+    }
+
     model->a = 1.0f;
     model->b = 1.0f;
 
