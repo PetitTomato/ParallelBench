@@ -4,11 +4,9 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "../camera_stub/camera_stub.h"
 #define USE_CAMERA 0
 
-#if USE_CAMERA
-#include "../camera_stub/camera_stub.h"
-#endif
 
 void imageSystemInitialize(){
 #if USE_CAMERA
@@ -47,30 +45,13 @@ int getCameraImage(int i, image_t* n) {
 #if USE_CAMERA
     CameraStub_getImage(0, &n->data, &n->width, &n->height, &n->stride);
 #else
-    void* p = malloc(640 * 480);
+    void* p = malloc(CAMERA_STRIDE * CAMERA_HEIGHT);
     if (p) {
         n->data = p;
-        n->width = 640;
-        n->stride = n->width;
-        n->height = 480;
-
-        // load Image
-        for (int y = 0; y < n->height; y++) {
-            for (int x = 0; x < n->width; x++) {
-                uint8_t v = 0;
-                if (0.5f * x + 10.0f < y) {
-                    v = 128;
-                }
-                setValue(n, x, y, v);
-            }
-        }
-
-        // add random noise
-        for(int i = 0; i < n->height/5; i++){
-            int x = rand() % n->width;
-            int y = rand() % n->height;
-            setValue(n, x, y, 128);
-        }
+        n->width = CAMERA_WIDTH;
+        n->height = CAMERA_HEIGHT;
+        n->stride = CAMERA_STRIDE;
+        CameraStub_drawTestImage(n->data, n->width, n->height, n->stride);
     }
 #endif
 
@@ -81,7 +62,7 @@ int getCameraImage(int i, image_t* n) {
 
 int releaseCameraImage(image_t* n){
 #if USE_CAMERA
-    // do nothing
+    CameraStub_releaseImage(n->data);
 #else
     releaseImage(n);
 #endif
@@ -90,13 +71,13 @@ int releaseCameraImage(image_t* n){
 
 int getBlurImage(image_t* src, image_t* dst) {
     image_init(dst);
-    void* p = malloc(640 * 480);
+    void* p = malloc(src->stride * src->height);
     if (p) {
         *dst = *src;	// copy w, h, stride
         dst->data = p;
 
         // make blur image
-        memcpy(dst->data, src->data, 640 * 480);
+        memcpy(dst->data, src->data, src->stride*src->height);
     }
     dst->timestamp = src->timestamp;
 
@@ -149,7 +130,7 @@ static inline int featurePoints_add(featurePoints_t* dst, float x, float y) {
     }
 }
 
-int getFeaturePoints(image_t* src, featurePoints_t* featurePoints) {
+int getFeaturePoints(image_t* src, featurePoints_t* featurePoints, float* th) {
     featurePoints_init(featurePoints);
 
     featurePoints->pos = malloc(sizeof(float) * 2 * 1000);
