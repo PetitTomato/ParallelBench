@@ -7,7 +7,7 @@
 void parallel_app_init(context_t* ctx) {
     memset(ctx, 0, sizeof(context_t));
     for(int i = 0; i < LEVEL; i++){
-        ctx->featureThresh[i] = 120.0f;
+        ctx->featureThresh[i] = 20.0f;
     }
     ctx->state = A;
 }
@@ -41,6 +41,7 @@ int parallel_app(context_t* ctx, image_t *img, result_t *result) {
             ctx->state = B;
         }
     } else if (ctx->state == B) {
+    	int totalError = 0;
         for (int i = 0; i < LEVEL; i++) {
             getFeaturePoints(&ctx->pyramidImg[i], &ctx->featureArray[i], &ctx->featureThresh[i]);
             //printf("fp: %d\n", ctx->featureArray[i].size);
@@ -53,9 +54,13 @@ int parallel_app(context_t* ctx, image_t *img, result_t *result) {
             } else {
                 ctx->tmp3 += err ? 0 : 1;
             }
+
+            totalError += err;
         }
 
-        ctx->state = C;
+        if(0 == totalError){
+        	ctx->state = C;
+        }
     } else if (ctx->state == C) {
         ctx->state = A;
     } else {

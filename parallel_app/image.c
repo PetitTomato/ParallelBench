@@ -33,11 +33,19 @@ static int releaseImage(image_t* n) {
     return 0;
 }
 
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+#define CLAMP(v, min, max) (MIN(MAX((min), (v)), (max)))
+
 static inline uint8_t getValue(image_t* src, int x, int y) {
-    return src->data[y * src->stride + x];
+	int cx = CLAMP(x, 0, src->width-1);
+	int cy = CLAMP(y, 0, src->height-1);
+    return src->data[cy * src->stride + cx];
 }
 static inline void setValue(image_t* src, int x, int y, uint8_t v) {
-    src->data[y * src->stride + x] = v;
+	int cx = CLAMP(x, 0, src->width-1);
+	int cy = CLAMP(y, 0, src->height-1);
+    src->data[cy * src->stride + cx] = v;
 }
 
 int getCameraImage(int i, image_t* n) {
@@ -77,7 +85,21 @@ int getBlurImage(image_t* src, image_t* dst) {
         dst->data = p;
 
         // make blur image
-        memcpy(dst->data, src->data, src->stride*src->height);
+        for(int y = 0; y < dst->height; y++){
+        	for(int x = 0; x < dst->width; x++){
+        		int v = 0;
+				v += 1*getValue(src, x-1, y-1);
+				v += 2*getValue(src, x  , y-1);
+				v += 1*getValue(src, x+1, y-1);
+				v += 2*getValue(src, x-1, y);
+				v += 4*getValue(src, x  , y);
+				v += 2*getValue(src, x+1, y);
+				v += 1*getValue(src, x-1, y+1);
+				v += 2*getValue(src, x  , y+1);
+				v += 1*getValue(src, x+1, y+1);
+        		setValue(dst, x, y, v/16);
+        	}
+        }
     }
     dst->timestamp = src->timestamp;
 
@@ -145,11 +167,14 @@ int getFeaturePoints(image_t* src, featurePoints_t* featurePoints, float* th) {
         }
     }
 
+    float new_th = *th;
     if(featurePoints->capacity == featurePoints->size){
-        *th += 5.0f;
+        new_th += 5.0f;
     } else if(featurePoints->size < featurePoints->capacity/2){
-        *th -= 1.0f;
+        new_th -= 1.0f;
     }
+    CLAMP(new_th, 10.0f, 150.0f);
+    *th = new_th;
 
     return 0;
 }
