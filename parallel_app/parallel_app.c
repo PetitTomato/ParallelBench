@@ -32,6 +32,7 @@ int parallel_app(context_t* ctx, image_t *img, result_t *result) {
 
     // main process
     if (ctx->state == A) {
+		ctx->tmp1 = ctx->tmp2 = ctx->tmp3 = 0;
         getFeaturePoints(&ctx->pyramidImg[0], &ctx->featureArray[0], &ctx->featureThresh[0]);
 
         //printf("fp: %d\n", ctx->featureArray[i].size);
@@ -40,12 +41,19 @@ int parallel_app(context_t* ctx, image_t *img, result_t *result) {
         if(!err){
             ctx->state = B;
         }
-    } else if (ctx->state == B) {
+    } else {
+    	int iterationNum;
+    	if (ctx->state == B){
+    		iterationNum = 500;
+    	} else {
+    		iterationNum = 100;
+    	}
+
     	int totalError = 0;
         for (int i = 0; i < LEVEL; i++) {
             getFeaturePoints(&ctx->pyramidImg[i], &ctx->featureArray[i], &ctx->featureThresh[i]);
             //printf("fp: %d\n", ctx->featureArray[i].size);
-            int err = ransac(ctx->featureArray[i].pos, ctx->featureArray[i].size, &ctx->model[i], 100 + (i * 100));
+            int err = ransac(ctx->featureArray[i].pos, ctx->featureArray[i].size, &ctx->model[i], iterationNum);
 
             if(i == 0){
                 ctx->tmp1 = err ? 0 : 1;
@@ -59,12 +67,12 @@ int parallel_app(context_t* ctx, image_t *img, result_t *result) {
         }
 
         if(0 == totalError){
-        	ctx->state = C;
+        	if (ctx->state == B) {
+        		ctx->state = C;
+        	} else {
+				ctx->state = A;
+        	}
         }
-    } else if (ctx->state == C) {
-        ctx->state = A;
-    } else {
-        assert(0 && "illigal state");
     }
 
     // post process

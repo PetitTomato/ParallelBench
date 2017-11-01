@@ -25,7 +25,7 @@ int main(void) {
 
         releaseCameraImage(&img);
 
-        printf("r: %d\n", result.n);
+        printf("r: %d %d\n", (int)ctx.state, result.n);
     }
 
     // finalize lib
